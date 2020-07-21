@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strings"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
@@ -176,8 +177,14 @@ func pathInvalid(b *versionedKVBackend) []*framework.Path {
 		case logical.DeleteOperation:
 			subCommand = "delete"
 		}
+		
+		var allowedPatterns []string
+		for _, path := b.Backend.Paths {
+			allowedPatterns = append(allowedPatterns, path.Pattern)	
+		}
+		
 		resp := &logical.Response{}
-		resp.AddWarning(fmt.Sprintf("Invalid path for a versioned K/V secrets engine. See the API docs for the appropriate API endpoints to use. If using the Vault CLI, use 'vault kv %s' for this operation.", subCommand))
+		resp.AddWarning(fmt.Sprintf("Invalid path for a versioned K/V secrets engine. See the API docs for the appropriate API endpoints to use. If using the Vault CLI, use 'vault kv %s' for this operation. Must match one of %s", subCommand, strings.Join(allowedPatterns, ", ")))
 		return logical.RespondWithStatusCode(resp, req, http.StatusNotFound)
 	}
 
